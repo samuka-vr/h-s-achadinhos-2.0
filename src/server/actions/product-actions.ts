@@ -136,3 +136,66 @@ export async function archiveProductAction(formData: FormData) {
   formData.set("status", "archived");
   await setProductStatusAction(formData);
 }
+
+function parseSelectedProductIds(formData: FormData) {
+  const raw = String(formData.get("ids") ?? "");
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return Array.from(new Set(raw.split(",").map((value) => value.trim()).filter((value) => uuidPattern.test(value)))).slice(0, 500);
+}
+
+export async function updateProductCoverAction(formData: FormData) {
+  await requireRole(["owner", "admin", "editor"]);
+  const id = String(formData.get("id") ?? "");
+  const coverUrl = String(formData.get("cover_url") ?? "").trim();
+  if (!id) return;
+  if (coverUrl && !/^https?:\/\//i.test(coverUrl)) {
+    redirect(`/studio/produtos?erro=${encodeURIComponent("A imagem precisa ter uma URL válida.")}`);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("products").update({ cover_url: coverUrl || null }).eq("id", id);
+  if (error) redirect(`/studio/produtos?erro=${encodeURIComponent(error.message)}`);
+
+  refreshProductPaths();
+  redirect("/studio/produtos?sucesso=imagem");
+}
+
+export async function bulkProductsAction(formData: FormData) {
+  const action = String(formData.get("bulk_action") ?? "");
+  const ids = parseSelectedProductIds(formData);
+  if (!ids.length) redirect(`/studio/produtos?erro=${encodeURIComponent("Selecione pelo menos um produto.")}`);
+
+  if (action === "delete") await requireRole(["owner", "admin"]);
+  else await requireRole(["owner", "admin", "editor"]);
+
+  const supabase = await createSupabaseServerClient();
+  let error: { message: string } | null = null;
+
+  if (["published", "draft", "archived"].includes(action)) {
+    const payload: Record<string, unknown> = { status: action, deleted_at: null };
+    if (action === "published") payload.published_at = new Date().toISOString();
+    const result = await supabase.from("products").update(payload).in("id", ids);
+    error = result.error;
+  } else if (action === "feature" || action === "unfeature") {
+    const result = await supabase.from("products").update({ featured: action === "feature" }).in("id", ids);
+    error = result.error;
+  } else if (action === "category") {
+    const categoryId = String(formData.get("category_id") ?? "").trim();
+    if (categoryId) {
+      const { count } = await supabase.from("categories").select("id", { count: "exact", head: true }).eq("id", categoryId);
+      if (!count) redirect(`/studio/produtos?erro=${encodeURIComponent("A categoria escolhida não existe.")}`);
+    }
+    const result = await supabase.from("products").update({ category_id: categoryId || null }).in("id", ids);
+    error = result.error;
+  } else if (action === "delete") {
+    const result = await supabase.from("products").delete().in("id", ids);
+    error = result.error;
+  } else {
+    redirect(`/studio/produtos?erro=${encodeURIComponent("Escolha uma ação em massa válida.")}`);
+  }
+
+  if (error) redirect(`/studio/produtos?erro=${encodeURIComponent(error.message)}`);
+  refreshProductPaths();
+  revalidatePath("/studio/categorias");
+  redirect(`/studio/produtos?sucesso=lote&quantidade=${ids.length}`);
+}

@@ -5,8 +5,9 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/server/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { buildProductSlug, generatePublicCode } from "@/lib/public-code";
-import { normalizeCategoryKey, parseStructuredProducts } from "@/lib/import-products";
+import { parseStructuredProducts } from "@/lib/import-products";
 import { slugify } from "@/lib/slug";
+import { suggestProductCategory, type ExistingCategoryRef } from "@/lib/category-intelligence";
 import type { ProductStatus } from "@/types/domain";
 
 async function generateUniqueCode(existingCodes: Set<string>) {
@@ -23,11 +24,20 @@ async function generateUniqueCode(existingCodes: Set<string>) {
   throw new Error("Não foi possível gerar um código único para o produto.");
 }
 
+function normalizeName(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 export async function importProductsAction(formData: FormData) {
   const viewer = await requireRole(["owner", "admin", "editor"]);
   const raw = String(formData.get("raw") ?? "");
   const status: ProductStatus = formData.get("status") === "draft" ? "draft" : "published";
-  const createCategories = formData.get("create_categories") === "on";
+  const allowNewCategories = formData.get("create_categories") === "on";
   const skipDuplicates = formData.get("skip_duplicates") === "on";
   const parsed = parseStructuredProducts(raw);
 
@@ -44,60 +54,66 @@ export async function importProductsAction(formData: FormData) {
     .from("import_jobs")
     .insert({
       created_by: viewer.user.id,
-      source: "texto_estruturado",
+      source: "texto_estruturado_inteligente",
       item_count: parsed.items.length,
       status: "running",
     })
     .select("id")
     .single();
 
-  if (jobError || !job) redirect(`/studio/importacao?erro=${encodeURIComponent(jobError?.message ?? "Não foi possível iniciar a importação.")}`);
+  if (jobError || !job) {
+    redirect(`/studio/importacao?erro=${encodeURIComponent(jobError?.message ?? "Não foi possível iniciar a importação.")}`);
+  }
 
   let successUrl = "/studio/importacao";
 
   try {
     const { data: categoryRows, error: categoryError } = await supabase
       .from("categories")
-      .select("id,name,slug")
+      .select("id,name,slug,active")
       .order("name");
     if (categoryError) throw categoryError;
 
-    const categories = new Map<string, { id: string; name: string; slug: string }>();
-    const usedSlugs = new Set<string>();
-    for (const category of categoryRows ?? []) {
-      categories.set(normalizeCategoryKey(category.name), category);
-      usedSlugs.add(category.slug);
-    }
+    const categories: ExistingCategoryRef[] = (categoryRows ?? []).map((category) => ({
+      id: category.id,
+      name: category.name,
+      active: category.active,
+    }));
+    const categoryByName = new Map(categories.map((category) => [normalizeName(category.name), category]));
+    const usedSlugs = new Set((categoryRows ?? []).map((category) => category.slug));
 
-    const requestedCategoryNames = Array.from(
-      new Map(
-        parsed.items
-          .filter((item) => item.categoryName)
-          .map((item) => [normalizeCategoryKey(item.categoryName), item.categoryName]),
-      ).entries(),
-    );
+    async function ensureCanonicalCategory(name: string) {
+      const key = normalizeName(name);
+      const existing = categoryByName.get(key);
+      if (existing) return existing;
+      if (!allowNewCategories) return null;
 
-    let createdCategories = 0;
-    if (createCategories) {
-      for (const [key, name] of requestedCategoryNames) {
-        if (categories.has(key)) continue;
-        const baseSlug = slugify(name);
-        let slug = baseSlug;
-        let suffix = 2;
-        while (usedSlugs.has(slug)) {
-          slug = `${baseSlug}-${suffix}`;
-          suffix += 1;
-        }
-        const { data: created, error } = await supabase
-          .from("categories")
-          .insert({ name, slug, description: `Produtos importados da categoria ${name}.`, active: true, sort_order: categories.size })
-          .select("id,name,slug")
-          .single();
-        if (error || !created) throw error ?? new Error("Não foi possível criar a categoria.");
-        categories.set(key, created);
-        usedSlugs.add(created.slug);
-        createdCategories += 1;
+      const baseSlug = slugify(name);
+      let slug = baseSlug;
+      let suffix = 2;
+      while (usedSlugs.has(slug)) {
+        slug = `${baseSlug}-${suffix}`;
+        suffix += 1;
       }
+
+      const { data: created, error } = await supabase
+        .from("categories")
+        .insert({
+          name,
+          slug,
+          description: `Categoria principal organizada automaticamente para produtos de ${name}.`,
+          active: true,
+          sort_order: categories.length,
+        })
+        .select("id,name,slug,active")
+        .single();
+      if (error || !created) throw error ?? new Error("Não foi possível criar a categoria sugerida.");
+
+      const reference: ExistingCategoryRef = { id: created.id, name: created.name, active: created.active };
+      categories.push(reference);
+      categoryByName.set(key, reference);
+      usedSlugs.add(created.slug);
+      return reference;
     }
 
     const urls = Array.from(new Set(parsed.items.map((item) => item.externalUrl)));
@@ -111,8 +127,10 @@ export async function importProductsAction(formData: FormData) {
     const seenInBatch = new Set<string>();
     const existingCodes = new Set<string>();
     const payload = [];
+    const categoriesBefore = categories.length;
     let skippedDuplicates = 0;
-    let skippedMissingCategory = 0;
+    let needsReview = 0;
+    let automaticallyCategorized = 0;
 
     for (const item of parsed.items) {
       if (skipDuplicates && (duplicateUrls.has(item.externalUrl) || seenInBatch.has(item.externalUrl))) {
@@ -121,8 +139,31 @@ export async function importProductsAction(formData: FormData) {
       }
       seenInBatch.add(item.externalUrl);
 
-      const category = item.categoryName ? categories.get(normalizeCategoryKey(item.categoryName)) : undefined;
-      if (item.categoryName && !category && !createCategories) skippedMissingCategory += 1;
+      const suggestion = suggestProductCategory(
+        {
+          name: item.name,
+          description: item.description,
+          sourceCategory: item.categoryName,
+        },
+        categories,
+      );
+
+      let categoryId = suggestion.existingCategoryId;
+      if (categoryId) {
+        const matched = categories.find((category) => category.id === categoryId);
+        if (matched && matched.active === false) {
+          const { error } = await supabase.from("categories").update({ active: true }).eq("id", categoryId);
+          if (error) throw error;
+          matched.active = true;
+        }
+      }
+      if (!categoryId && suggestion.canonicalName && suggestion.shouldCreate) {
+        const category = await ensureCanonicalCategory(suggestion.canonicalName);
+        categoryId = category?.id ?? null;
+      }
+
+      if (categoryId) automaticallyCategorized += 1;
+      else needsReview += 1;
 
       const code = await generateUniqueCode(existingCodes);
       payload.push({
@@ -134,7 +175,7 @@ export async function importProductsAction(formData: FormData) {
         price_text: item.priceText,
         external_url: item.externalUrl,
         affiliate_network: item.affiliateNetwork,
-        category_id: category?.id ?? null,
+        category_id: categoryId,
         status,
         featured: false,
         sort_order: 0,
@@ -164,9 +205,10 @@ export async function importProductsAction(formData: FormData) {
     const query = new URLSearchParams({
       importados: String(payload.length),
       duplicados: String(skippedDuplicates),
-      categorias: String(createdCategories),
+      categorias: String(categories.length - categoriesBefore),
+      categorizados: String(automaticallyCategorized),
       invalidos: String(parsed.errors.length),
-      semCategoria: String(skippedMissingCategory),
+      semCategoria: String(needsReview),
     });
     successUrl = `/studio/importacao?${query.toString()}`;
   } catch (error) {

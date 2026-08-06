@@ -7,6 +7,7 @@ export async function listStudioProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
     .select("*, category:categories(id,name,slug)")
+    .is("deleted_at", null)
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return data as unknown as Product[];

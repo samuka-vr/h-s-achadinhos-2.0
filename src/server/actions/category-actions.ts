@@ -6,6 +6,7 @@ import { categorySchema } from "@/schemas/category";
 import { slugify } from "@/lib/slug";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireRole } from "@/server/auth";
+import { suggestProductCategory } from "@/lib/category-intelligence";
 
 export async function saveCategoryAction(formData: FormData) {
   await requireRole(["owner", "admin", "editor"]);
@@ -41,4 +42,128 @@ export async function deleteCategoryAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/categorias");
   revalidatePath("/studio/categorias");
+}
+
+export async function organizeCatalogCategoriesAction() {
+  await requireRole(["owner", "admin"]);
+  const supabase = await createSupabaseServerClient();
+
+  const [{ data: categoryRows, error: categoriesError }, { data: productRows, error: productsError }] = await Promise.all([
+    supabase.from("categories").select("id,name,slug,active,sort_order").order("sort_order").order("name"),
+    supabase
+      .from("products")
+      .select("id,name,short_description,description,category_id,category:categories(name)")
+      .is("deleted_at", null),
+  ]);
+
+  if (categoriesError || productsError) {
+    redirect(`/studio/categorias?erro=${encodeURIComponent(categoriesError?.message ?? productsError?.message ?? "Não foi possível organizar as categorias.")}`);
+  }
+
+  const categories = (categoryRows ?? []).map((category) => ({ id: category.id, name: category.name, active: category.active }));
+  const byCanonicalName = new Map(categories.map((category) => [category.name.toLocaleLowerCase("pt-BR"), category]));
+  const usedSlugs = new Set((categoryRows ?? []).map((category) => category.slug));
+  let created = 0;
+  let updated = 0;
+  let deactivated = 0;
+
+  async function ensureCategory(name: string) {
+    const key = name.toLocaleLowerCase("pt-BR");
+    const existing = byCanonicalName.get(key);
+    if (existing) {
+      if (!existing.active) {
+        const { error } = await supabase.from("categories").update({ active: true }).eq("id", existing.id);
+        if (error) throw error;
+        existing.active = true;
+      }
+      return existing;
+    }
+
+    const baseSlug = slugify(name);
+    let slug = baseSlug;
+    let suffix = 2;
+    while (usedSlugs.has(slug)) {
+      slug = `${baseSlug}-${suffix}`;
+      suffix += 1;
+    }
+
+    const { data, error } = await supabase
+      .from("categories")
+      .insert({
+        name,
+        slug,
+        description: `Categoria principal organizada automaticamente para produtos de ${name}.`,
+        active: true,
+        sort_order: categories.length + created,
+      })
+      .select("id,name,active")
+      .single();
+    if (error || !data) throw error ?? new Error("Não foi possível criar a categoria principal.");
+
+    const item = { id: data.id, name: data.name, active: data.active };
+    categories.push(item);
+    byCanonicalName.set(key, item);
+    usedSlugs.add(slug);
+    created += 1;
+    return item;
+  }
+
+  try {
+    const targetByProduct = new Map<string, string>();
+    const finalCategoryIds = new Set<string>();
+
+    for (const product of productRows ?? []) {
+      const relation = Array.isArray(product.category) ? product.category[0] : product.category;
+      const suggestion = suggestProductCategory(
+        {
+          name: product.name,
+          description: `${product.short_description ?? ""} ${product.description ?? ""}`,
+          sourceCategory: relation?.name ?? "",
+        },
+        categories,
+      );
+
+      if (suggestion.canonicalName && suggestion.confidence !== "low") {
+        const target = await ensureCategory(suggestion.canonicalName);
+        targetByProduct.set(product.id, target.id);
+        finalCategoryIds.add(target.id);
+      } else if (product.category_id) {
+        finalCategoryIds.add(product.category_id);
+      }
+    }
+
+    const grouped = new Map<string, string[]>();
+    for (const [productId, categoryId] of targetByProduct) {
+      const currentProduct = (productRows ?? []).find((product) => product.id === productId);
+      if (currentProduct?.category_id === categoryId) continue;
+      const ids = grouped.get(categoryId) ?? [];
+      ids.push(productId);
+      grouped.set(categoryId, ids);
+    }
+
+    for (const [categoryId, productIds] of grouped) {
+      const { error } = await supabase.from("products").update({ category_id: categoryId }).in("id", productIds);
+      if (error) throw error;
+      updated += productIds.length;
+    }
+
+    for (const category of categoryRows ?? []) {
+      if (!finalCategoryIds.has(category.id) && category.active) {
+        const { error } = await supabase.from("categories").update({ active: false }).eq("id", category.id);
+        if (error) throw error;
+        deactivated += 1;
+      }
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Não foi possível organizar o catálogo.";
+    redirect(`/studio/categorias?erro=${encodeURIComponent(message)}`);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/categorias");
+  revalidatePath("/produtos");
+  revalidatePath("/studio");
+  revalidatePath("/studio/produtos");
+  revalidatePath("/studio/categorias");
+  redirect(`/studio/categorias?organizados=${updated}&criadas=${created}&desativadas=${deactivated}`);
 }

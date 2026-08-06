@@ -1,6 +1,6 @@
 import { CheckCircle2, Clock3, FileWarning } from "lucide-react";
 import { ImportWorkbench } from "@/components/studio/import-workbench";
-import { listImportJobs } from "@/server/queries/studio";
+import { listImportJobs, listStudioCategories } from "@/server/queries/studio";
 import { requireRole } from "@/server/auth";
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
     categorias?: string;
     invalidos?: string;
     semCategoria?: string;
+    categorizados?: string;
   }>;
 };
 
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ImportPage({ searchParams }: Props) {
   await requireRole(["owner", "admin", "editor"]);
-  const [sp, jobs] = await Promise.all([searchParams, listImportJobs().catch(() => [])]);
+  const [sp, jobs, categories] = await Promise.all([searchParams, listImportJobs().catch(() => []), listStudioCategories()]);
   const imported = Number(sp.importados ?? 0);
   const hasReport = Object.values(sp).some(Boolean) && !sp.erro;
 
@@ -39,14 +40,15 @@ export default async function ImportPage({ searchParams }: Props) {
           <dl>
             <div><dt>Importados</dt><dd>{sp.importados ?? 0}</dd></div>
             <div><dt>Duplicados ignorados</dt><dd>{sp.duplicados ?? 0}</dd></div>
-            <div><dt>Categorias criadas</dt><dd>{sp.categorias ?? 0}</dd></div>
+            <div><dt>Categorizados automaticamente</dt><dd>{sp.categorizados ?? 0}</dd></div>
+            <div><dt>Categorias principais criadas</dt><dd>{sp.categorias ?? 0}</dd></div>
             <div><dt>Itens inválidos</dt><dd>{sp.invalidos ?? 0}</dd></div>
             <div><dt>Sem categoria correspondente</dt><dd>{sp.semCategoria ?? 0}</dd></div>
           </dl>
         </section>
       ) : null}
 
-      <ImportWorkbench />
+      <ImportWorkbench categories={categories.map(({ id, name, active }) => ({ id, name, active }))} />
 
       <section className="panel section-panel">
         <div className="panel-heading compact">
@@ -59,7 +61,7 @@ export default async function ImportPage({ searchParams }: Props) {
               <tbody>{jobs.map((job) => (
                 <tr key={job.id}>
                   <td>{new Date(job.created_at).toLocaleString("pt-BR")}</td>
-                  <td>{job.source === "texto_estruturado" ? "Lista estruturada" : job.source}</td>
+                  <td>{job.source.startsWith("texto_estruturado") ? "Lista estruturada inteligente" : job.source}</td>
                   <td>{job.item_count}</td>
                   <td><span className={`status-pill ${job.status}`}>{job.status === "completed" ? <CheckCircle2 size={13}/> : <Clock3 size={13}/>} {job.status}</span></td>
                   <td className="muted">{job.error_message || "—"}</td>

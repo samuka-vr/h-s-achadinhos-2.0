@@ -1,9 +1,10 @@
 import { FolderTree, Pencil, Plus, Trash2 } from "lucide-react";
 import { deleteCategoryAction, saveCategoryAction } from "@/server/actions/category-actions";
+import { CategoryOrganizerButton } from "@/components/studio/category-organizer-button";
 import { listStudioCategories, listStudioProducts } from "@/server/queries/studio";
 import { requireRole } from "@/server/auth";
 
-type Props = { searchParams: Promise<{ erro?: string; sucesso?: string }> };
+type Props = { searchParams: Promise<{ erro?: string; sucesso?: string; organizados?: string; criadas?: string; desativadas?: string }> };
 export const dynamic = "force-dynamic";
 
 export default async function CategoriesStudio({ searchParams }: Props) {
@@ -14,9 +15,10 @@ export default async function CategoriesStudio({ searchParams }: Props) {
 
   return (
     <>
-      <div className="studio-page-header"><div><span className="section-kicker">Organização</span><h1>Categorias</h1><p>Organize o catálogo e facilite a navegação dos visitantes.</p></div></div>
+      <div className="studio-page-header"><div><span className="section-kicker">Organização</span><h1>Categorias</h1><p>Mantenha poucas categorias principais e deixe o sistema classificar os produtos automaticamente.</p></div>{viewer.role !== "editor" ? <CategoryOrganizerButton /> : null}</div>
       {sp.erro ? <div className="message error">{sp.erro}</div> : null}
       {sp.sucesso ? <div className="message success">Categoria salva com sucesso.</div> : null}
+      {sp.organizados !== undefined ? <div className="message success">Organização concluída: {sp.organizados} produto(s) movido(s), {sp.criadas ?? 0} categoria(s) principal(is) criada(s) e {sp.desativadas ?? 0} categoria(s) vazia(s) desativada(s).</div> : null}
 
       <section className="category-manager-grid">
         <form action={saveCategoryAction} className="panel form-section category-create-card">

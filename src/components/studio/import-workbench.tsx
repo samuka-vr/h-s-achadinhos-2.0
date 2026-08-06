@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, FileText, Sparkles, Upload } from "lucide-react";
 import { parseStructuredProducts } from "@/lib/import-products";
+import { suggestProductCategory } from "@/lib/category-intelligence";
 import { importProductsAction } from "@/server/actions/import-actions";
+import type { Category } from "@/types/domain";
 
 const example = `1. Mini Máquina Seladora Recarregável Para Embalagens Plásticas
 Categoria: Cozinha
@@ -17,9 +19,25 @@ Descrição: Organizador giratório para maquiagem, perfumes e pincéis.
 Valor: R$39,90
 Link: https://s.shopee.com.br/exemplo2`;
 
-export function ImportWorkbench() {
+export function ImportWorkbench({ categories }: { categories: Pick<Category, "id" | "name" | "active">[] }) {
   const [raw, setRaw] = useState("");
   const result = useMemo(() => parseStructuredProducts(raw), [raw]);
+  const previews = useMemo(
+    () =>
+      result.items.map((item) => ({
+        item,
+        suggestion: suggestProductCategory(
+          {
+            name: item.name,
+            description: item.description,
+            sourceCategory: item.categoryName,
+          },
+          categories,
+        ),
+      })),
+    [categories, result.items],
+  );
+  const reviewCount = previews.filter(({ suggestion }) => !suggestion.canonicalName).length;
 
   return (
     <form action={importProductsAction} className="import-workbench">
@@ -28,7 +46,7 @@ export function ImportWorkbench() {
           <div>
             <span className="section-kicker">Importação inteligente</span>
             <h2>Cole sua lista exatamente como você já usa</h2>
-            <p>O sistema identifica nome, categoria, descrição, valor e link de cada item.</p>
+            <p>O sistema lê o produto inteiro e escolhe uma categoria principal, mesmo que o nome informado esteja diferente.</p>
           </div>
           <button className="button ghost" type="button" onClick={() => setRaw(example)}>
             <FileText size={17} /> Usar exemplo
@@ -57,7 +75,10 @@ export function ImportWorkbench() {
           </label>
           <label className="switch-row">
             <input type="checkbox" name="create_categories" defaultChecked />
-            <span><strong>Criar categorias ausentes</strong><small>Novas categorias são criadas automaticamente.</small></span>
+            <span>
+              <strong>Criar categoria principal quando necessário</strong>
+              <small>Nunca cria variações pequenas; apenas categorias amplas e reutilizáveis.</small>
+            </span>
           </label>
           <label className="switch-row">
             <input type="checkbox" name="skip_duplicates" defaultChecked />
@@ -69,19 +90,30 @@ export function ImportWorkbench() {
       <aside className="panel import-preview-panel">
         <div className="preview-summary">
           <div className="preview-count"><Sparkles size={20} /><strong>{result.items.length}</strong><span>produtos reconhecidos</span></div>
-          <div className={result.errors.length ? "preview-alert warning" : "preview-alert success"}>
-            {result.errors.length ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}
-            {result.errors.length ? `${result.errors.length} item(ns) precisam de correção` : "Formato pronto para importar"}
+          <div className={result.errors.length || reviewCount ? "preview-alert warning" : "preview-alert success"}>
+            {result.errors.length || reviewCount ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}
+            {result.errors.length
+              ? `${result.errors.length} item(ns) precisam de correção`
+              : reviewCount
+                ? `${reviewCount} item(ns) ficarão para revisar categoria`
+                : "Categorias reconhecidas automaticamente"}
           </div>
         </div>
 
-        <div className="preview-list">
-          {result.items.slice(0, 12).map((item) => (
+        <div className="preview-list smart-category-preview">
+          {previews.slice(0, 12).map(({ item, suggestion }) => (
             <article key={`${item.sourceIndex}-${item.externalUrl}`} className="preview-item">
               <span className="preview-index">{item.sourceIndex}</span>
               <div>
                 <strong>{item.name}</strong>
-                <p>{item.categoryName || "Sem categoria"} · {item.priceText || "Sem preço informado"}</p>
+                <p>{item.priceText || "Sem preço informado"}</p>
+                <div className="category-routing-line">
+                  <span className="category-source">{item.categoryName || "Sem categoria informada"}</span>
+                  <span aria-hidden="true">→</span>
+                  <span className={suggestion.canonicalName ? "category-target" : "category-target review"}>
+                    {suggestion.canonicalName || "Revisar categoria"}
+                  </span>
+                </div>
               </div>
             </article>
           ))}
@@ -98,7 +130,7 @@ export function ImportWorkbench() {
         <button className="button primary wide" type="submit" disabled={!result.items.length}>
           <Upload size={18} /> Importar {result.items.length || ""} produto{result.items.length === 1 ? "" : "s"}
         </button>
-        <p className="form-help">Os itens válidos serão importados. Erros e duplicados serão informados no relatório final.</p>
+        <p className="form-help">A categoria informada ajuda, mas o nome e a descrição do produto têm prioridade na decisão.</p>
       </aside>
     </form>
   );

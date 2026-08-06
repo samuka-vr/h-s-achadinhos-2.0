@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { StudioSidebar } from "@/components/studio/sidebar";
+import { StudioTopbar } from "@/components/studio/topbar";
 import { requireRole } from "@/server/auth";
 
 export const metadata: Metadata = {
@@ -11,7 +12,10 @@ export default async function StudioLayout({ children }: { children: React.React
   return (
     <div className="studio-shell">
       <StudioSidebar role={viewer.role} />
-      <main className="studio-main"><div className="studio-content">{children}</div></main>
+      <main className="studio-main">
+        <StudioTopbar role={viewer.role} />
+        <div className="studio-content">{children}</div>
+      </main>
     </div>
   );
 }
