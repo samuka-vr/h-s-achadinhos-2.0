@@ -19,7 +19,10 @@ export async function requireUser() {
 
 export async function requireRole(allowed: UserRole[]) {
   const viewer = await requireUser();
-  if (!viewer.role) redirect("/studio/bootstrap");
-  if (!allowed.includes(viewer.role)) redirect("/studio?erro=sem-permissao");
-  return viewer;
+  const role = viewer.role;
+
+  if (!role) redirect("/studio/bootstrap");
+  if (!allowed.includes(role)) redirect("/studio?erro=sem-permissao");
+
+  return { ...viewer, role };
 }
