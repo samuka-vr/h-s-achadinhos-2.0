@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Header } from "@/components/site/header";
@@ -17,5 +18,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSiteSettings();
-  return <><Header settings={settings}/><main>{children}</main><Footer settings={settings}/><Suspense><AnalyticsTracker/></Suspense></>;
+  const style = {
+    "--brand": settings.theme.primary_color || "#4f46e5",
+    "--brand-strong": settings.theme.primary_dark || "#3730a3",
+    "--accent": settings.theme.accent_color || "#8b5cf6",
+  } as CSSProperties;
+
+  return <div className="public-app" style={style}><Header settings={settings}/><main>{children}</main><Footer settings={settings}/><Suspense><AnalyticsTracker/></Suspense></div>;
 }

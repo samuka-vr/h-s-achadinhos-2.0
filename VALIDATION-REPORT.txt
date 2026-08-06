@@ -1,10 +1,12 @@
-H&S ACHADINHOS — RELATÓRIO DE VALIDAÇÃO DA GERAÇÃO
+H&S ACHADINHOS 2.0 — RELATÓRIO DE VALIDAÇÃO
 
-- 108 arquivos após inclusão deste relatório e manifesto.
-- Todos os arquivos JSON foram analisados com sucesso pelo parser Python.
-- Todos os arquivos TypeScript/TSX foram submetidos ao parser do TypeScript 5.8.3.
-- Nenhum erro de sintaxe TS1000–TS1499 foi encontrado.
-- Nenhum TODO, FIXME, placeholder do Lovable ou tela falsa foi encontrado.
-- O arquivo ZIP foi testado com verificação de integridade.
+- 117 arquivos no pacote final.
+- Todos os arquivos JSON foram analisados com sucesso.
+- Todos os arquivos TypeScript/TSX foram submetidos ao parser do TypeScript.
+- Nenhum erro de sintaxe TypeScript/TSX foi encontrado.
+- O interpretador do novo formato de importação foi executado com exemplos reais do padrão numerado.
+- O formato com títulos iniciados por quantidades, preços em faixa e “A partir de” foi validado.
+- O arquivo .env.local e chaves secretas não estão incluídos.
+- O manifesto SHA-256 foi regenerado após as alterações.
 
-Limitação: dependências externas não foram baixadas neste ambiente sem acesso web. Portanto, lint, typecheck completo, testes com dependências e next build devem ser executados após npm install.
+Limitação do ambiente atual: o registro de pacotes disponível não forneceu a dependência zod, portanto não foi possível executar npm install, lint, typecheck completo e next build aqui. Execute npm install e npm run verify no Codespaces antes do envio definitivo à Vercel.

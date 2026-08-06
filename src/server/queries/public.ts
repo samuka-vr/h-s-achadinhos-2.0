@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Category, Product, SiteSettings } from "@/types/domain";
+import type { Banner, Category, Product, SiteSettings } from "@/types/domain";
 
 const defaultSettings: SiteSettings = {
   id: 1,
@@ -34,6 +34,24 @@ export async function getCategories(): Promise<Category[]> {
       .order("sort_order")
       .order("name");
     return (data ?? []) as Category[];
+  } catch {
+    return [];
+  }
+}
+
+export async function getActiveBanners(): Promise<Banner[]> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const now = new Date().toISOString();
+    const { data } = await supabase
+      .from("banners")
+      .select("*")
+      .eq("active", true)
+      .or(`starts_at.is.null,starts_at.lte.${now}`)
+      .or(`ends_at.is.null,ends_at.gte.${now}`)
+      .order("sort_order")
+      .limit(6);
+    return (data ?? []) as Banner[];
   } catch {
     return [];
   }

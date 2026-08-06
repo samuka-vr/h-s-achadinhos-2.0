@@ -47,6 +47,7 @@ export async function requireRole(allowed: UserRole[]) {
 
   if (!role) {
     redirect("/studio/bootstrap");
+    throw new Error("Usuário sem papel administrativo.");
   }
 
   if (!allowed.includes(role)) {

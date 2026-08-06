@@ -44,3 +44,34 @@ export interface SiteSettings {
   theme: Record<string, string>;
   indexing_enabled: boolean;
 }
+
+export interface Banner {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  image_url: string;
+  target_url: string | null;
+  active: boolean;
+  sort_order: number;
+  starts_at: string | null;
+  ends_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ImportJob {
+  id: string;
+  source: string;
+  status: "pending" | "running" | "completed" | "failed";
+  item_count: number;
+  error_message: string | null;
+  created_at: string;
+  finished_at: string | null;
+}
+
+export interface StudioUser {
+  user_id: string;
+  email: string;
+  role: UserRole | null;
+  created_at: string;
+}

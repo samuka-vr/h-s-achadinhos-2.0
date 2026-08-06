@@ -30,3 +30,15 @@ export async function saveCategoryAction(formData: FormData) {
   revalidatePath("/studio/categorias");
   redirect("/studio/categorias?sucesso=salva");
 }
+
+export async function deleteCategoryAction(formData: FormData) {
+  await requireRole(["owner", "admin"]);
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("categories").delete().eq("id", id);
+  if (error) redirect(`/studio/categorias?erro=${encodeURIComponent(error.message)}`);
+  revalidatePath("/");
+  revalidatePath("/categorias");
+  revalidatePath("/studio/categorias");
+}

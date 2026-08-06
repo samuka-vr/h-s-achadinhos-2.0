@@ -1,13 +1,12 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import type { Category, Product, SiteSettings, UserRole } from "@/types/domain";
+import type { Banner, Category, ImportJob, Product, SiteSettings, StudioUser, UserRole } from "@/types/domain";
 
 export async function listStudioProducts(): Promise<Product[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("products")
     .select("*, category:categories(id,name,slug)")
-    .is("deleted_at", null)
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return data as unknown as Product[];
@@ -33,15 +32,16 @@ export async function getStudioSettings(): Promise<SiteSettings> {
   return data as SiteSettings;
 }
 
-export async function listUsers() {
+export async function listUsers(): Promise<StudioUser[]> {
   const [supabase, admin] = await Promise.all([createSupabaseServerClient(), Promise.resolve(createSupabaseAdminClient())]);
-  const [{ data: roles, error }, { data: authData }] = await Promise.all([
+  const [{ data: roles, error }, authResult] = await Promise.all([
     supabase.from("user_roles").select("user_id,role,created_at").order("created_at"),
     admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
   ]);
   if (error) throw error;
+  if (authResult.error) throw authResult.error;
   const roleMap = new Map((roles ?? []).map((item) => [item.user_id, item]));
-  return authData.users.map((user) => ({ user_id: user.id, email: user.email ?? "—", role: (roleMap.get(user.id)?.role as UserRole | undefined) ?? null, created_at: user.created_at }));
+  return authResult.data.users.map((user) => ({ user_id: user.id, email: user.email ?? "—", role: (roleMap.get(user.id)?.role as UserRole | undefined) ?? null, created_at: user.created_at }));
 }
 
 export async function getAnalytics(days = 30) {
@@ -55,4 +55,22 @@ export async function getAnalytics(days = 30) {
     top_products: Array<{ name: string; public_code: string; clicks: number }>;
     daily: Array<{ day: string; sessions: number; page_views: number; outbound_clicks: number }>;
   };
+}
+
+export async function listImportJobs(limit = 12): Promise<ImportJob[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("import_jobs")
+    .select("id,source,status,item_count,error_message,created_at,finished_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as ImportJob[];
+}
+
+export async function listStudioBanners(): Promise<Banner[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from("banners").select("*").order("sort_order").order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Banner[];
 }
