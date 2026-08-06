@@ -33,14 +33,14 @@ type NavigationItem = {
 const allRoles: UserRole[] = ["owner", "admin", "editor", "analyst"];
 const editorRoles: UserRole[] = ["owner", "admin", "editor"];
 const navigation: NavigationItem[] = [
-  { href: "/studio", label: "Visão geral", description: "Resumo e tarefas", icon: LayoutDashboard, roles: allRoles, section: "overview" },
-  { href: "/studio/produtos", label: "Produtos", description: "Catálogo e imagens", icon: Boxes, roles: editorRoles, section: "catalog" },
-  { href: "/studio/categorias", label: "Categorias", description: "Organização automática", icon: FolderTree, roles: editorRoles, section: "catalog" },
-  { href: "/studio/importacao", label: "Importar produtos", description: "Listas em massa", icon: Import, roles: editorRoles, section: "catalog" },
-  { href: "/studio/banners", label: "Mídia e banners", description: "Destaques do site", icon: Image, roles: editorRoles, section: "catalog" },
-  { href: "/studio/analytics", label: "Analytics", description: "Visitas e cliques", icon: BarChart3, roles: allRoles, section: "insights" },
-  { href: "/studio/configuracoes", label: "Personalização", description: "Marca e aparência", icon: Settings, roles: ["owner", "admin"], section: "system" },
-  { href: "/studio/usuarios", label: "Equipe e acessos", description: "Permissões do painel", icon: Users, roles: ["owner"], section: "system" },
+  { href: "/studio", label: "Visão geral", description: "Resumo do negócio", icon: LayoutDashboard, roles: allRoles, section: "overview" },
+  { href: "/studio/produtos", label: "Produtos", description: "Itens, imagens e status", icon: Boxes, roles: editorRoles, section: "catalog" },
+  { href: "/studio/categorias", label: "Categorias", description: "Estrutura do catálogo", icon: FolderTree, roles: editorRoles, section: "catalog" },
+  { href: "/studio/importacao", label: "Importar produtos", description: "Cadastrar vários itens", icon: Import, roles: editorRoles, section: "catalog" },
+  { href: "/studio/banners", label: "Mídia e banners", description: "Campanhas visuais", icon: Image, roles: editorRoles, section: "catalog" },
+  { href: "/studio/analytics", label: "Analytics", description: "Desempenho do site", icon: BarChart3, roles: allRoles, section: "insights" },
+  { href: "/studio/configuracoes", label: "Personalização", description: "Textos, cores e identidade", icon: Settings, roles: ["owner", "admin"], section: "system" },
+  { href: "/studio/usuarios", label: "Equipe e acessos", description: "Pessoas e níveis de acesso", icon: Users, roles: ["owner"], section: "system" },
 ];
 
 const roleLabels: Record<UserRole, string> = {
@@ -98,17 +98,17 @@ export function StudioSidebar({ role }: { role: UserRole }) {
           <button className="studio-close" type="button" onClick={() => setOpen(false)} aria-label="Fechar menu"><X size={21} /></button>
         </div>
 
-        <div className="studio-sidebar-status"><span className="status-dot" /><div><strong>Painel conectado</strong><small>Supabase e Vercel ativos</small></div></div>
+        <div className="studio-sidebar-status"><span className="status-dot" /><div><strong>Ambiente protegido</strong><small>Acesso restrito à equipe</small></div></div>
 
         <nav>
           {(["overview", "catalog", "insights", "system"] as Section[]).map(renderSection)}
         </nav>
 
         <div className="sidebar-bottom">
-          <a href="/" target="_blank" rel="noreferrer" className="sidebar-public-link">Abrir site público <ExternalLink size={16} /></a>
+          <a href="/" target="_blank" rel="noreferrer" className="sidebar-public-link">Ver site público <ExternalLink size={16} /></a>
           <div className="sidebar-user">
             <div className="avatar">{roleLabels[role].slice(0, 1)}</div>
-            <div><strong>{roleLabels[role]}</strong><small>Sessão protegida</small></div>
+            <div><strong>{roleLabels[role]}</strong><small>Conta administrativa</small></div>
           </div>
           <form action={logoutAction}><button className="sidebar-logout" type="submit"><LogOut size={17} /> Sair da conta</button></form>
         </div>

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.0 — Refinamento do H&S Studio
+
+- Seleção em massa em produtos, categorias, banners e equipe.
+- Menus, seletores e confirmações próprios do painel.
+- Upload de arquivos com interface personalizada.
+- Melhorias de alinhamento, responsividade e textos.
+- Proteção da conta do proprietário em ações em massa.
+
 ## 2.0.0 — Interface pública e H&S Studio
 
 - Interface pública completamente refeita.

@@ -167,3 +167,39 @@ export async function organizeCatalogCategoriesAction() {
   revalidatePath("/studio/categorias");
   redirect(`/studio/categorias?organizados=${updated}&criadas=${created}&desativadas=${deactivated}`);
 }
+
+function parseCategoryIds(formData: FormData) {
+  const raw = String(formData.get("ids") ?? "");
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return Array.from(new Set(raw.split(",").map((value) => value.trim()).filter((value) => uuidPattern.test(value)))).slice(0, 300);
+}
+
+export async function bulkCategoriesAction(formData: FormData) {
+  const action = String(formData.get("bulk_action") ?? "");
+  const ids = parseCategoryIds(formData);
+  if (!ids.length) redirect(`/studio/categorias?erro=${encodeURIComponent("Selecione pelo menos uma categoria.")}`);
+
+  if (action === "delete") await requireRole(["owner", "admin"]);
+  else await requireRole(["owner", "admin", "editor"]);
+
+  const supabase = await createSupabaseServerClient();
+  let error: { message: string } | null = null;
+
+  if (action === "activate" || action === "deactivate") {
+    const result = await supabase.from("categories").update({ active: action === "activate" }).in("id", ids);
+    error = result.error;
+  } else if (action === "delete") {
+    const result = await supabase.from("categories").delete().in("id", ids);
+    error = result.error;
+  } else {
+    redirect(`/studio/categorias?erro=${encodeURIComponent("Escolha uma ação válida.")}`);
+  }
+
+  if (error) redirect(`/studio/categorias?erro=${encodeURIComponent(error.message)}`);
+  revalidatePath("/");
+  revalidatePath("/categorias");
+  revalidatePath("/produtos");
+  revalidatePath("/studio/categorias");
+  revalidatePath("/studio/produtos");
+  redirect(`/studio/categorias?sucesso=lote&quantidade=${ids.length}`);
+}

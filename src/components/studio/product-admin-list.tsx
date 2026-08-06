@@ -24,7 +24,21 @@ import {
   toggleProductFeaturedAction,
   updateProductCoverAction,
 } from "@/server/actions/product-actions";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CustomSelect, type CustomSelectOption } from "@/components/ui/custom-select";
+import { StudioCheckbox } from "@/components/ui/studio-checkbox";
 import type { Category, Product, UserRole } from "@/types/domain";
+
+
+const productBulkOptions: CustomSelectOption[] = [
+  { value: "published", label: "Publicar produtos", description: "Exibe no site" },
+  { value: "draft", label: "Mover para rascunhos", description: "Mantém salvo sem publicar" },
+  { value: "archived", label: "Arquivar produtos", description: "Retira do catálogo ativo" },
+  { value: "feature", label: "Adicionar aos destaques", description: "Mostra na seleção principal" },
+  { value: "unfeature", label: "Remover dos destaques", description: "Mantém o produto publicado" },
+  { value: "category", label: "Alterar categoria", description: "Move todos para a mesma categoria" },
+  { value: "delete", label: "Excluir produtos", description: "Remove permanentemente", danger: true },
+];
 
 function statusLabel(status: Product["status"]) {
   if (status === "published") return "Publicado";
@@ -73,6 +87,7 @@ function QuickCoverEditor({ product, onClose }: { product: Product; onClose: () 
   const [value, setValue] = useState(product.cover_url ?? "");
   const [status, setStatus] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [fileName, setFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function upload() {
@@ -129,10 +144,22 @@ function QuickCoverEditor({ product, onClose }: { product: Product; onClose: () 
         </label>
 
         <div className="quick-cover-upload-box">
-          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" />
-          <button type="button" className="button secondary" onClick={upload} disabled={uploading}>
+          <input
+            ref={fileRef}
+            className="custom-upload-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(event) => {
+              setFileName(event.target.files?.[0]?.name ?? "");
+              setStatus("");
+            }}
+          />
+          <button type="button" className="custom-upload-picker" onClick={() => fileRef.current?.click()}>
+            <ImagePlus size={17} /> <span>{fileName || "Escolher imagem"}</span>
+          </button>
+          <button type="button" className="button secondary" onClick={upload} disabled={uploading || !fileName}>
             {uploading ? <LoaderCircle className="spin" size={17} /> : <Upload size={17} />}
-            {uploading ? "Enviando" : "Enviar arquivo"}
+            {uploading ? "Enviando" : "Enviar"}
           </button>
         </div>
         {status ? <p className="form-help quick-cover-status">{status}</p> : null}
@@ -158,6 +185,9 @@ export function ProductAdminList({
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState("");
   const [editingImage, setEditingImage] = useState<Product | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const bulkFormRef = useRef<HTMLFormElement>(null);
+  const bypassConfirmRef = useRef(false);
   const ids = useMemo(() => products.map((product) => product.id), [products]);
   const allSelected = ids.length > 0 && ids.every((id) => selected.includes(id));
 
@@ -170,13 +200,21 @@ export function ProductAdminList({
   }
 
   function confirmBulkAction(event: React.FormEvent<HTMLFormElement>) {
-    if (!selected.length) {
+    if (!selected.length || !bulkAction) {
       event.preventDefault();
       return;
     }
-    if (bulkAction === "delete" && !window.confirm(`Excluir permanentemente ${selected.length} produto(s)? Esta ação não pode ser desfeita.`)) {
+    if (bulkAction === "delete" && !bypassConfirmRef.current) {
       event.preventDefault();
+      setConfirmDelete(true);
     }
+    bypassConfirmRef.current = false;
+  }
+
+  function confirmProductDelete() {
+    bypassConfirmRef.current = true;
+    setConfirmDelete(false);
+    bulkFormRef.current?.requestSubmit();
   }
 
   if (!products.length) {
@@ -192,23 +230,27 @@ export function ProductAdminList({
           <span>selecionado{selected.length === 1 ? "" : "s"}</span>
           <button type="button" onClick={() => setSelected([])}>Limpar</button>
         </div>
-        <form action={bulkProductsAction} onSubmit={confirmBulkAction} className="bulk-actions-form">
+        <form ref={bulkFormRef} action={bulkProductsAction} onSubmit={confirmBulkAction} className="bulk-actions-form">
           <input type="hidden" name="ids" value={selected.join(",")} />
-          <select name="bulk_action" value={bulkAction} onChange={(event) => setBulkAction(event.target.value)} required>
-            <option value="">Escolha uma ação</option>
-            <option value="published">Publicar selecionados</option>
-            <option value="draft">Mover para rascunhos</option>
-            <option value="archived">Arquivar selecionados</option>
-            <option value="feature">Marcar como destaque</option>
-            <option value="unfeature">Remover dos destaques</option>
-            <option value="category">Alterar categoria</option>
-            {role !== "editor" ? <option value="delete">Excluir permanentemente</option> : null}
-          </select>
+          <CustomSelect
+            name="bulk_action"
+            value={bulkAction}
+            onValueChange={setBulkAction}
+            options={role === "editor" ? productBulkOptions.filter((option) => option.value !== "delete") : productBulkOptions}
+            placeholder="Escolha o que fazer"
+            ariaLabel="Ação para produtos selecionados"
+          />
           {bulkAction === "category" ? (
-            <select name="category_id" aria-label="Nova categoria">
-              <option value="">Sem categoria</option>
-              {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-            </select>
+            <CustomSelect
+              name="category_id"
+              defaultValue=""
+              ariaLabel="Nova categoria dos produtos"
+              placeholder="Escolha uma categoria"
+              options={[
+                { value: "", label: "Sem categoria", description: "Deixa os produtos para revisão" },
+                ...categories.map((category) => ({ value: category.id, label: category.name })),
+              ]}
+            />
           ) : null}
           <button className={bulkAction === "delete" ? "button danger" : "button primary"} disabled={!bulkAction || !selected.length}>
             {bulkAction === "delete" ? <Trash2 size={17} /> : <MoreHorizontal size={17} />} Aplicar
@@ -220,14 +262,14 @@ export function ProductAdminList({
         <table className="data-table product-admin-table professional-product-table">
           <thead>
             <tr>
-              <th className="selection-column"><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="Selecionar todos os produtos" /></th>
+              <th className="selection-column"><StudioCheckbox checked={allSelected} onChange={toggleAll} ariaLabel="Selecionar todos os produtos" /></th>
               <th>Produto</th><th>Preço</th><th>Categoria</th><th>Status</th><th>Destaque</th><th className="right">Ações</th>
             </tr>
           </thead>
           <tbody>
             {products.map((product) => (
               <tr key={product.id} className={selected.includes(product.id) ? "selected-row" : ""}>
-                <td className="selection-column"><input type="checkbox" checked={selected.includes(product.id)} onChange={() => toggle(product.id)} aria-label={`Selecionar ${product.name}`} /></td>
+                <td className="selection-column"><StudioCheckbox checked={selected.includes(product.id)} onChange={() => toggle(product.id)} ariaLabel={`Selecionar ${product.name}`} /></td>
                 <td>
                   <div className="table-product professional-table-product">
                     <ProductImage product={product} onEdit={() => setEditingImage(product)} />
@@ -255,12 +297,12 @@ export function ProductAdminList({
 
       <div className="product-list-mobile">
         <div className="mobile-select-all-row">
-          <label><input type="checkbox" checked={allSelected} onChange={toggleAll} /> Selecionar todos nesta página</label>
+          <label><StudioCheckbox checked={allSelected} onChange={toggleAll} ariaLabel="Selecionar todos os produtos" /> Selecionar todos os resultados</label>
           <span>{products.length} itens</span>
         </div>
         {products.map((product) => (
           <article key={product.id} className={selected.includes(product.id) ? "mobile-product-card selected" : "mobile-product-card"}>
-            <div className="mobile-product-select"><input type="checkbox" checked={selected.includes(product.id)} onChange={() => toggle(product.id)} aria-label={`Selecionar ${product.name}`} /></div>
+            <div className="mobile-product-select"><StudioCheckbox checked={selected.includes(product.id)} onChange={() => toggle(product.id)} ariaLabel={`Selecionar ${product.name}`} /></div>
             <ProductImage product={product} onEdit={() => setEditingImage(product)} />
             <div className="mobile-product-content">
               <div className="mobile-product-heading">
@@ -282,6 +324,14 @@ export function ProductAdminList({
       </div>
 
       {editingImage ? <QuickCoverEditor product={editingImage} onClose={() => setEditingImage(null)} /> : null}
+      <ConfirmDialog
+        open={confirmDelete}
+        title={`Excluir ${selected.length} produto${selected.length === 1 ? "" : "s"}?`}
+        description="Os produtos selecionados serão removidos de forma permanente. Essa ação não pode ser desfeita."
+        confirmLabel="Excluir produtos"
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={confirmProductDelete}
+      />
     </>
   );
 }

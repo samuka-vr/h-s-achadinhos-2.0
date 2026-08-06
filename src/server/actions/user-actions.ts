@@ -31,3 +31,26 @@ export async function inviteUserAction(formData: FormData) {
   if (roleError) redirect(`/studio/usuarios?erro=${encodeURIComponent(roleError.message)}`);
   revalidatePath("/studio/usuarios");
 }
+
+function parseUserIds(formData: FormData) {
+  const raw = String(formData.get("ids") ?? "");
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return Array.from(new Set(raw.split(",").map((value) => value.trim()).filter((value) => uuidPattern.test(value)))).slice(0, 300);
+}
+
+export async function bulkUserRolesAction(formData: FormData) {
+  const viewer = await requireRole(["owner"]);
+  const ids = parseUserIds(formData).filter((id) => id !== viewer.user.id);
+  const role = z.enum(["owner", "admin", "editor", "analyst"]).safeParse(formData.get("role"));
+
+  if (!ids.length) redirect(`/studio/usuarios?erro=${encodeURIComponent("Selecione pelo menos outro integrante.")}`);
+  if (!role.success) redirect(`/studio/usuarios?erro=${encodeURIComponent("Escolha um nível de acesso válido.")}`);
+
+  const supabase = await createSupabaseServerClient();
+  const payload = ids.map((user_id) => ({ user_id, role: role.data }));
+  const { error } = await supabase.from("user_roles").upsert(payload, { onConflict: "user_id" });
+  if (error) redirect(`/studio/usuarios?erro=${encodeURIComponent(error.message)}`);
+
+  revalidatePath("/studio/usuarios");
+  redirect(`/studio/usuarios?sucesso=lote&quantidade=${ids.length}`);
+}

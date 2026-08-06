@@ -5,6 +5,7 @@ import { AlertTriangle, CheckCircle2, FileText, Sparkles, Upload } from "lucide-
 import { parseStructuredProducts } from "@/lib/import-products";
 import { suggestProductCategory } from "@/lib/category-intelligence";
 import { importProductsAction } from "@/server/actions/import-actions";
+import { CustomSelect } from "@/components/ui/custom-select";
 import type { Category } from "@/types/domain";
 
 const example = `1. Mini Máquina Seladora Recarregável Para Embalagens Plásticas
@@ -68,10 +69,15 @@ export function ImportWorkbench({ categories }: { categories: Pick<Category, "id
         <div className="import-options">
           <label>
             <span>Status dos produtos</span>
-            <select name="status" defaultValue="published">
-              <option value="published">Publicar imediatamente</option>
-              <option value="draft">Salvar como rascunho</option>
-            </select>
+            <CustomSelect
+              name="status"
+              defaultValue="published"
+              ariaLabel="Status dos produtos importados"
+              options={[
+                { value: "published", label: "Publicar imediatamente", description: "Os produtos entram no site após a importação" },
+                { value: "draft", label: "Salvar como rascunho", description: "Revise antes de publicar" },
+              ]}
+            />
           </label>
           <label className="switch-row">
             <input type="checkbox" name="create_categories" defaultChecked />

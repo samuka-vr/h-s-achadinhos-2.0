@@ -40,3 +40,33 @@ export async function deleteBannerAction(formData: FormData) {
   if (error) redirect(`/studio/banners?erro=${encodeURIComponent(error.message)}`);
   refreshBannerPaths();
 }
+
+function parseBannerIds(formData: FormData) {
+  const raw = String(formData.get("ids") ?? "");
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return Array.from(new Set(raw.split(",").map((value) => value.trim()).filter((value) => uuidPattern.test(value)))).slice(0, 300);
+}
+
+export async function bulkBannersAction(formData: FormData) {
+  await requireRole(["owner", "admin", "editor"]);
+  const action = String(formData.get("bulk_action") ?? "");
+  const ids = parseBannerIds(formData);
+  if (!ids.length) redirect(`/studio/banners?erro=${encodeURIComponent("Selecione pelo menos um banner.")}`);
+
+  const supabase = await createSupabaseServerClient();
+  let error: { message: string } | null = null;
+
+  if (action === "activate" || action === "deactivate") {
+    const result = await supabase.from("banners").update({ active: action === "activate" }).in("id", ids);
+    error = result.error;
+  } else if (action === "delete") {
+    const result = await supabase.from("banners").delete().in("id", ids);
+    error = result.error;
+  } else {
+    redirect(`/studio/banners?erro=${encodeURIComponent("Escolha uma ação válida.")}`);
+  }
+
+  if (error) redirect(`/studio/banners?erro=${encodeURIComponent(error.message)}`);
+  refreshBannerPaths();
+  redirect(`/studio/banners?sucesso=lote&quantidade=${ids.length}`);
+}

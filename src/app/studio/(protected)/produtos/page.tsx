@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Filter, Plus, Search, Sparkles, Upload } from "lucide-react";
 import { ProductAdminList } from "@/components/studio/product-admin-list";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { listStudioCategories, listStudioProducts } from "@/server/queries/studio";
 import { requireRole } from "@/server/auth";
 
@@ -49,7 +50,7 @@ export default async function StudioProducts({ searchParams }: Props) {
         <div>
           <span className="section-kicker">Catálogo</span>
           <h1>Produtos</h1>
-          <p>Controle imagens, categorias, publicação e ações em massa em uma única tela.</p>
+          <p>Encontre, revise e publique seus produtos sem sair desta tela.</p>
         </div>
         <div className="header-actions">
           <Link href="/studio/importacao" className="button secondary"><Upload size={18} /> Importar lista</Link>
@@ -71,8 +72,27 @@ export default async function StudioProducts({ searchParams }: Props) {
       <section className="panel products-panel professional-products-panel">
         <form className="studio-filter-bar professional-filter-bar">
           <label className="filter-search"><Search size={18} /><input name="q" defaultValue={sp.q} placeholder="Buscar por nome, código ou link..." /></label>
-          <label><Filter size={17} /><select name="status" defaultValue={sp.status ?? "all"}><option value="all">Todos os status</option><option value="published">Publicados</option><option value="draft">Rascunhos</option><option value="archived">Arquivados</option></select></label>
-          <label><select name="categoria" defaultValue={sp.categoria ?? "all"}><option value="all">Todas as categorias</option><option value="uncategorized">Sem categoria</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+          <div className="filter-custom-select"><Filter size={17} /><CustomSelect
+            name="status"
+            defaultValue={sp.status ?? "all"}
+            ariaLabel="Filtrar por status"
+            options={[
+              { value: "all", label: "Todos os status" },
+              { value: "published", label: "Publicados" },
+              { value: "draft", label: "Rascunhos" },
+              { value: "archived", label: "Arquivados" },
+            ]}
+          /></div>
+          <div className="filter-custom-select"><CustomSelect
+            name="categoria"
+            defaultValue={sp.categoria ?? "all"}
+            ariaLabel="Filtrar por categoria"
+            options={[
+              { value: "all", label: "Todas as categorias" },
+              { value: "uncategorized", label: "Sem categoria" },
+              ...categories.map((category) => ({ value: category.id, label: category.name })),
+            ]}
+          /></div>
           <button className="button primary" type="submit">Filtrar</button>
           {(sp.q || sp.status || sp.categoria) ? <Link href="/studio/produtos" className="button ghost">Limpar</Link> : null}
         </form>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Image as ImageIcon, Info, Save, Sparkles } from "lucide-react";
 import { UploadField } from "@/components/studio/upload-field";
+import { CustomSelect } from "@/components/ui/custom-select";
 import type { Category, Product } from "@/types/domain";
 import { saveProductAction } from "@/server/actions/product-actions";
 
@@ -15,7 +16,15 @@ export function ProductForm({ product, categories, error }: { product?: Product;
           <div className="form-section-heading"><span>1</span><div><h2>Informações principais</h2><p>Dados que aparecem no card e na página do produto.</p></div></div>
           <div className="form-grid two">
             <label>Nome do produto<input name="name" required minLength={3} maxLength={160} defaultValue={product?.name} placeholder="Ex.: Mini seladora portátil recarregável"/></label>
-            <label>Categoria<select name="category_id" defaultValue={product?.category_id ?? ""}><option value="">Sem categoria</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+            <label>Categoria<CustomSelect
+              name="category_id"
+              defaultValue={product?.category_id ?? ""}
+              ariaLabel="Categoria do produto"
+              options={[
+                { value: "", label: "Sem categoria", description: "Deixe para revisar depois" },
+                ...categories.map((category) => ({ value: category.id, label: category.name })),
+              ]}
+            /></label>
           </div>
           <label>Descrição curta <small>Até 280 caracteres; aparece no card.</small><textarea name="short_description" rows={3} maxLength={280} defaultValue={product?.short_description ?? ""} placeholder="Explique rapidamente por que este produto é útil."/></label>
           <label>Descrição completa<textarea name="description" rows={7} maxLength={8000} defaultValue={product?.description ?? ""} placeholder="Detalhes, benefícios, usos e outras informações importantes."/></label>
@@ -39,7 +48,16 @@ export function ProductForm({ product, categories, error }: { product?: Product;
       <aside className="product-editor-side">
         <section className="panel publish-card">
           <div className="publish-card-head"><Sparkles size={19}/><h2>Publicação</h2></div>
-          <label>Status<select name="status" defaultValue={product?.status ?? "draft"}><option value="draft">Rascunho</option><option value="published">Publicado</option><option value="archived">Arquivado</option></select></label>
+          <label>Status<CustomSelect
+            name="status"
+            defaultValue={product?.status ?? "draft"}
+            ariaLabel="Status do produto"
+            options={[
+              { value: "draft", label: "Rascunho", description: "Salva sem mostrar no site" },
+              { value: "published", label: "Publicado", description: "Fica visível no catálogo" },
+              { value: "archived", label: "Arquivado", description: "Sai do catálogo ativo" },
+            ]}
+          /></label>
           <label>Ordem de exibição<input type="number" name="sort_order" min={0} max={9999} defaultValue={product?.sort_order ?? 0}/><small>Números menores aparecem primeiro.</small></label>
           <label className="switch-row"><input type="checkbox" name="featured" defaultChecked={product?.featured}/><span><strong>Produto em destaque</strong><small>Exibir na seleção principal da página inicial.</small></span></label>
           <button className="button primary wide" type="submit"><Save size={18}/> {product ? "Salvar alterações" : "Criar produto"}</button>

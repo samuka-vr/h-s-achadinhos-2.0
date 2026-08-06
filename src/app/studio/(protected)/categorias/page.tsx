@@ -1,57 +1,72 @@
-import { FolderTree, Pencil, Plus, Trash2 } from "lucide-react";
-import { deleteCategoryAction, saveCategoryAction } from "@/server/actions/category-actions";
+import { Plus } from "lucide-react";
+import { saveCategoryAction } from "@/server/actions/category-actions";
 import { CategoryOrganizerButton } from "@/components/studio/category-organizer-button";
+import { CategoryAdminList } from "@/components/studio/category-admin-list";
 import { listStudioCategories, listStudioProducts } from "@/server/queries/studio";
 import { requireRole } from "@/server/auth";
 
-type Props = { searchParams: Promise<{ erro?: string; sucesso?: string; organizados?: string; criadas?: string; desativadas?: string }> };
+type Props = {
+  searchParams: Promise<{
+    erro?: string;
+    sucesso?: string;
+    organizados?: string;
+    criadas?: string;
+    desativadas?: string;
+    quantidade?: string;
+  }>;
+};
+
 export const dynamic = "force-dynamic";
 
 export default async function CategoriesStudio({ searchParams }: Props) {
   const viewer = await requireRole(["owner", "admin", "editor"]);
   const [categories, products, sp] = await Promise.all([listStudioCategories(), listStudioProducts(), searchParams]);
-  const counts = new Map<string, number>();
-  for (const product of products) if (product.category_id) counts.set(product.category_id, (counts.get(product.category_id) ?? 0) + 1);
+  const counts: Record<string, number> = {};
+  for (const product of products) {
+    if (product.category_id) counts[product.category_id] = (counts[product.category_id] ?? 0) + 1;
+  }
 
   return (
     <>
-      <div className="studio-page-header"><div><span className="section-kicker">Organização</span><h1>Categorias</h1><p>Mantenha poucas categorias principais e deixe o sistema classificar os produtos automaticamente.</p></div>{viewer.role !== "editor" ? <CategoryOrganizerButton /> : null}</div>
-      {sp.erro ? <div className="message error">{sp.erro}</div> : null}
-      {sp.sucesso ? <div className="message success">Categoria salva com sucesso.</div> : null}
-      {sp.organizados !== undefined ? <div className="message success">Organização concluída: {sp.organizados} produto(s) movido(s), {sp.criadas ?? 0} categoria(s) principal(is) criada(s) e {sp.desativadas ?? 0} categoria(s) vazia(s) desativada(s).</div> : null}
+      <div className="studio-page-header">
+        <div>
+          <span className="section-kicker">Organização do catálogo</span>
+          <h1>Categorias</h1>
+          <p>Agrupe produtos parecidos em categorias claras. Use ações em massa para manter a estrutura enxuta.</p>
+        </div>
+        {viewer.role !== "editor" ? <CategoryOrganizerButton /> : null}
+      </div>
 
-      <section className="category-manager-grid">
-        <form action={saveCategoryAction} className="panel form-section category-create-card">
-          <div className="form-section-heading"><span><Plus size={18}/></span><div><h2>Nova categoria</h2><p>Crie uma seção para agrupar produtos semelhantes.</p></div></div>
-          <label>Nome<input name="name" required placeholder="Ex.: Casa e Iluminação"/></label>
-          <label>Descrição<textarea name="description" rows={4} placeholder="Explique o que o visitante encontrará nesta categoria."/></label>
-          <label>URL da imagem opcional<input type="url" name="image_url" placeholder="https://..."/></label>
-          <div className="form-grid two"><label>Ordem<input name="sort_order" type="number" min={0} defaultValue={categories.length}/></label><label className="switch-row compact"><input type="checkbox" name="active" defaultChecked/><span><strong>Categoria ativa</strong><small>Exibir no site público.</small></span></label></div>
-          <button className="button primary wide"><Plus size={18}/> Adicionar categoria</button>
+      {sp.erro ? <div className="message error">{sp.erro}</div> : null}
+      {sp.sucesso === "salva" ? <div className="message success">Categoria salva.</div> : null}
+      {sp.sucesso === "lote" ? <div className="message success">{sp.quantidade ?? "As"} categoria(s) foram atualizadas.</div> : null}
+      {sp.organizados !== undefined ? (
+        <div className="message success">
+          Organização concluída: {sp.organizados} produto(s) movido(s), {sp.criadas ?? 0} categoria(s) criada(s) e {sp.desativadas ?? 0} categoria(s) vazia(s) ocultada(s).
+        </div>
+      ) : null}
+
+      <section className="category-manager-grid refined-manager-grid">
+        <form action={saveCategoryAction} className="panel form-section category-create-card sticky-create-card">
+          <div className="form-section-heading">
+            <span><Plus size={18} /></span>
+            <div><h2>Nova categoria</h2><p>Crie apenas quando nenhuma categoria atual servir.</p></div>
+          </div>
+          <label>Nome<input name="name" required placeholder="Ex.: Moda e Acessórios" /></label>
+          <label>Descrição<textarea name="description" rows={4} placeholder="Explique de forma simples quais produtos entram aqui." /></label>
+          <label>Imagem opcional<input type="url" name="image_url" placeholder="https://..." /></label>
+          <div className="form-grid two">
+            <label>Ordem<input name="sort_order" type="number" min={0} defaultValue={categories.length} /></label>
+            <label className="switch-row compact"><input type="checkbox" name="active" defaultChecked /><span><strong>Exibir no site</strong><small>Você pode ocultar depois sem apagar.</small></span></label>
+          </div>
+          <button className="button primary wide"><Plus size={18} /> Criar categoria</button>
         </form>
 
-        <div className="panel category-list-panel">
-          <div className="panel-heading compact"><div><span className="section-kicker">Estrutura atual</span><h2>{categories.length} categorias</h2></div></div>
-          <div className="category-manage-list">
-            {categories.map((category) => (
-              <details key={category.id} className="manage-accordion">
-                <summary>
-                  <span className="manage-icon"><FolderTree size={19}/></span>
-                  <div className="grow"><strong>{category.name}</strong><small>{counts.get(category.id) ?? 0} produto{(counts.get(category.id) ?? 0) === 1 ? "" : "s"} · /{category.slug}</small></div>
-                  <span className={category.active ? "status-pill published" : "status-pill archived"}>{category.active ? "Ativa" : "Inativa"}</span>
-                  <Pencil size={17}/>
-                </summary>
-                <form action={saveCategoryAction} className="accordion-form">
-                  <input type="hidden" name="id" value={category.id}/>
-                  <div className="form-grid two"><label>Nome<input name="name" defaultValue={category.name} required/></label><label>Ordem<input name="sort_order" type="number" min={0} defaultValue={category.sort_order}/></label></div>
-                  <label>Descrição<textarea name="description" rows={3} defaultValue={category.description ?? ""}/></label>
-                  <label>URL da imagem<input type="url" name="image_url" defaultValue={category.image_url ?? ""}/></label>
-                  <label className="switch-row compact"><input type="checkbox" name="active" defaultChecked={category.active}/><span><strong>Categoria ativa</strong><small>Disponível no site público.</small></span></label>
-                  <div className="form-actions split">{viewer.role === "editor" ? <span/> : <button className="button danger" type="submit" formAction={deleteCategoryAction}><Trash2 size={16}/> Excluir</button>}<button className="button primary" type="submit">Salvar alterações</button></div>
-                </form>
-              </details>
-            ))}
+        <div className="panel category-list-panel refined-list-panel">
+          <div className="panel-heading compact">
+            <div><span className="section-kicker">Estrutura atual</span><h2>Gerenciar categorias</h2><p>Selecione uma ou várias para ativar, ocultar ou excluir.</p></div>
           </div>
+          <CategoryAdminList categories={categories} counts={counts} role={viewer.role} />
         </div>
       </section>
     </>
