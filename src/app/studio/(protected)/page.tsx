@@ -1,0 +1,5 @@
+import Link from "next/link";
+import { listStudioProducts, listStudioCategories, getAnalytics } from "@/server/queries/studio";
+
+export const dynamic="force-dynamic";
+export default async function Dashboard(){const [products,categories,analytics]=await Promise.all([listStudioProducts(),listStudioCategories(),getAnalytics(30).catch(()=>({sessions:0,page_views:0,outbound_clicks:0,top_products:[],daily:[]}))]);return <><div className="studio-top"><div><span className="eyebrow">Painel</span><h1>Visão geral</h1></div><Link href="/studio/produtos/novo" className="button primary">Novo produto</Link></div><div className="stat-grid"><div className="stat-card"><span>Produtos</span><strong>{products.length}</strong></div><div className="stat-card"><span>Categorias</span><strong>{categories.length}</strong></div><div className="stat-card"><span>Visitas · 30 dias</span><strong>{analytics.sessions}</strong></div><div className="stat-card"><span>Cliques · 30 dias</span><strong>{analytics.outbound_clicks}</strong></div></div></>}

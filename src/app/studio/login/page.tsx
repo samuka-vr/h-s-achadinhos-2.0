@@ -1,0 +1,4 @@
+import { loginAction, signUpAction } from "@/server/actions/auth-actions";
+
+type Props={searchParams:Promise<{erro?:string}>};
+export default async function LoginPage({searchParams}:Props){const {erro}=await searchParams;return <main className="login-page"><section className="login-card"><span className="eyebrow">Área administrativa</span><h1>H&amp;S Studio</h1><p className="muted">Entre para gerenciar produtos, conteúdo e estatísticas.</p>{erro?<div className="message error">{erro}</div>:null}<form className="stack"><label>E-mail<input type="email" name="email" required autoComplete="email"/></label><label>Senha<input type="password" name="password" required minLength={8} autoComplete="current-password"/></label><button formAction={loginAction} className="button primary">Entrar</button><button formAction={signUpAction} className="button secondary">Criar primeira conta</button></form></section></main>}

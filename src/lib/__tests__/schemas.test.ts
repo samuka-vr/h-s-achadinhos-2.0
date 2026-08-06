@@ -1,0 +1,1 @@
+import {describe,expect,it} from "vitest";import {productSchema} from "@/schemas/product";describe("schema de produto",()=>{it("rejeita link não HTTP",()=>{const result=productSchema.safeParse({name:"Produto teste",external_url:"javascript:alert(1)",category_id:"",status:"draft",featured:false,sort_order:0,cover_url:"",video_url:""});expect(result.success).toBe(false)})});
