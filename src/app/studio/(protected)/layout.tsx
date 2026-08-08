@@ -27,9 +27,9 @@ export default async function StudioLayout({ children }: { children: React.React
 
   return (
     <div className="studio-shell" style={style}>
-      <StudioSidebar role={viewer.role} />
+      <StudioSidebar role={viewer.role} brandName={settings.brand_name} logoUrl={settings.logo_url} />
       <main className="studio-main">
-        <StudioTopbar role={viewer.role} />
+        <StudioTopbar role={viewer.role} brandName={settings.brand_name} />
         <div className="studio-content">{children}</div>
       </main>
     </div>

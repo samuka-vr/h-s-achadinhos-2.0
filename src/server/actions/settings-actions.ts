@@ -13,6 +13,8 @@ export async function saveSettingsAction(formData: FormData) {
     tagline: formData.get("tagline"),
     description: formData.get("description"),
     logo_url: formData.get("logo_url"),
+    favicon_url: formData.get("favicon_url"),
+    share_image_url: formData.get("share_image_url"),
     instagram: formData.get("instagram"),
     tiktok: formData.get("tiktok"),
     whatsapp: formData.get("whatsapp"),
@@ -26,6 +28,8 @@ export async function saveSettingsAction(formData: FormData) {
     background_color: formData.get("background_color"),
     surface_color: formData.get("surface_color"),
     text_color: formData.get("text_color"),
+    show_brand_name: formData.get("show_brand_name") === "on",
+    show_header_tagline: formData.get("show_header_tagline") === "on",
     show_categories: formData.get("show_categories") === "on",
     show_featured: formData.get("show_featured") === "on",
     show_latest: formData.get("show_latest") === "on",
@@ -41,12 +45,16 @@ export async function saveSettingsAction(formData: FormData) {
     hero_subtitle,
     hero_cta,
     footer_notice,
+    favicon_url,
+    share_image_url,
     primary_color,
     primary_dark,
     accent_color,
     background_color,
     surface_color,
     text_color,
+    show_brand_name,
+    show_header_tagline,
     show_categories,
     show_featured,
     show_latest,
@@ -57,12 +65,25 @@ export async function saveSettingsAction(formData: FormData) {
   const { error } = await supabase.from("site_settings").update({
     ...rest,
     social_links: { instagram, tiktok, whatsapp },
-    homepage: { hero_title, hero_subtitle, hero_cta, footer_notice, show_categories, show_featured, show_latest },
+    homepage: {
+      hero_title,
+      hero_subtitle,
+      hero_cta,
+      footer_notice,
+      favicon_url,
+      share_image_url,
+      show_brand_name,
+      show_header_tagline,
+      show_categories,
+      show_featured,
+      show_latest,
+    },
     theme: { primary_color, primary_dark, accent_color, background_color, surface_color, text_color },
   }).eq("id", 1);
 
   if (error) redirect(`/studio/configuracoes?erro=${encodeURIComponent(error.message)}`);
-  revalidatePath("/");
+  revalidatePath("/", "layout");
+  revalidatePath("/studio", "layout");
   revalidatePath("/studio/configuracoes");
   redirect("/studio/configuracoes?sucesso=salvo");
 }

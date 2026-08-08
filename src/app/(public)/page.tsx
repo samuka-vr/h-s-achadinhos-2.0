@@ -127,7 +127,7 @@ export default async function HomePage() {
       <section className="affiliate-band">
         <div className="container affiliate-band-inner">
           <ShieldCheck size={26}/>
-          <div><strong>Compra segura na plataforma parceira</strong><p>O H&amp;S Achadinhos não realiza pagamentos. Você será redirecionado à loja para conferir preço, disponibilidade e finalizar a compra.</p></div>
+          <div><strong>Compra segura na plataforma parceira</strong><p>{settings.brand_name} não realiza pagamentos. Você será redirecionado à loja para conferir preço, disponibilidade e finalizar a compra.</p></div>
         </div>
       </section>
     </>

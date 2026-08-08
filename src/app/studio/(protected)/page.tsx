@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { ArrowRight, BarChart3, Boxes, Eye, MousePointerClick, PackageCheck, Plus, SearchX, Sparkles, Tag, Upload } from "lucide-react";
-import { getAnalytics, listStudioCategories, listStudioProducts } from "@/server/queries/studio";
+import { getAnalytics, getStudioSettings, listStudioCategories, listStudioProducts } from "@/server/queries/studio";
 
 export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
-  const [products, categories, analytics] = await Promise.all([
+  const [products, categories, analytics, settings] = await Promise.all([
     listStudioProducts(),
     listStudioCategories(),
     getAnalytics(30).catch(() => ({ sessions: 0, page_views: 0, outbound_clicks: 0, top_products: [], daily: [] })),
+    getStudioSettings(),
   ]);
 
   const published = products.filter((product) => product.status === "published").length;
@@ -23,7 +24,7 @@ export default async function Dashboard() {
         <div>
           <span className="section-kicker">Painel de controle</span>
           <h1>Visão geral</h1>
-          <p>Acompanhe o catálogo, o desempenho e as tarefas mais importantes do H&amp;S Achadinhos.</p>
+          <p>Acompanhe o catálogo, o desempenho e as tarefas mais importantes do {settings.brand_name}.</p>
         </div>
         <div className="header-actions">
           <Link href="/studio/importacao" className="button secondary"><Upload size={18}/> Importar lista</Link>
@@ -45,7 +46,7 @@ export default async function Dashboard() {
             <div className="dashboard-product-list">
               {recent.map((product) => (
                 <Link key={product.id} href={`/studio/produtos/${product.id}/editar`} className="dashboard-product-row">
-                  <div className="mini-product-image">{product.cover_url ? <img src={product.cover_url} alt=""/> : <span>H&amp;S</span>}</div>
+                  <div className="mini-product-image">{product.cover_url ? <img src={product.cover_url} alt=""/> : settings.logo_url ? <img src={settings.logo_url} alt=""/> : <span>H&amp;S</span>}</div>
                   <div className="grow"><strong>{product.name}</strong><span>{product.category?.name ?? "Sem categoria"}</span></div>
                   <span className={`status-pill ${product.status}`}>{product.status === "published" ? "Publicado" : product.status === "draft" ? "Rascunho" : "Arquivado"}</span>
                   <ArrowRight size={16}/>

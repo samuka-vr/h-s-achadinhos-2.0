@@ -11,7 +11,10 @@ export function Footer({ settings }: { settings: SiteSettings }) {
     <footer className="site-footer">
       <div className="container footer-grid">
         <div className="footer-brand">
-          <div className="brand"><span className="brand-mark">H&amp;S</span><strong>{settings.brand_name}</strong></div>
+          <div className="brand">
+            {settings.logo_url ? <img src={settings.logo_url} alt={settings.brand_name} className="brand-logo footer-brand-logo"/> : <span className="brand-mark">H&amp;S</span>}
+            <strong>{settings.brand_name}</strong>
+          </div>
           <p>{settings.description}</p>
           <div className="social-row">
             {settings.social_links.instagram ? <a href={settings.social_links.instagram} target="_blank" rel="noreferrer" aria-label="Instagram"><Instagram size={18}/></a> : null}

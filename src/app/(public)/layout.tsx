@@ -7,13 +7,26 @@ import { AnalyticsTracker } from "@/components/site/analytics-tracker";
 import { getSiteSettings } from "@/server/queries/public";
 import { resolveSiteTheme } from "@/lib/theme";
 
+function stringSetting(value: unknown) {
+  return typeof value === "string" && value ? value : undefined;
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
   const enabled = process.env.SITE_INDEXING_ENABLED === "true" && settings.indexing_enabled;
+  const favicon = stringSetting(settings.homepage.favicon_url);
+  const shareImage = stringSetting(settings.homepage.share_image_url);
+
   return {
     title: { default: settings.brand_name, template: `%s | ${settings.brand_name}` },
     description: settings.description,
     robots: { index: enabled, follow: enabled },
+    icons: favicon ? { icon: favicon, apple: favicon } : undefined,
+    openGraph: shareImage ? {
+      title: settings.brand_name,
+      description: settings.description,
+      images: [{ url: shareImage }],
+    } : undefined,
   };
 }
 

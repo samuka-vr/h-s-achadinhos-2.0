@@ -57,7 +57,7 @@ const sectionLabels: Record<Section, string> = {
   system: "Administração",
 };
 
-export function StudioSidebar({ role }: { role: UserRole }) {
+export function StudioSidebar({ role, brandName, logoUrl }: { role: UserRole; brandName: string; logoUrl: string | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const items = navigation.filter((item) => item.roles.includes(role));
@@ -85,15 +85,15 @@ export function StudioSidebar({ role }: { role: UserRole }) {
   return (
     <>
       <header className="studio-mobile-header">
-        <Link href="/studio" className="studio-brand"><span>H&amp;S</span><strong>Studio</strong></Link>
+        <Link href="/studio" className="studio-brand"><span>{logoUrl ? <img src={logoUrl} alt={brandName}/> : <>H&amp;S</>}</span><strong>Studio</strong></Link>
         <button type="button" onClick={() => setOpen(true)} aria-label="Abrir menu"><Menu size={23} /></button>
       </header>
       {open ? <button className="studio-overlay" aria-label="Fechar menu" onClick={() => setOpen(false)} /> : null}
       <aside className={open ? "studio-sidebar open" : "studio-sidebar"}>
         <div className="studio-sidebar-head">
           <Link href="/studio" className="studio-brand" onClick={() => setOpen(false)}>
-            <span>H&amp;S</span>
-            <div><strong>Studio</strong><small>Central de gestão</small></div>
+            <span>{logoUrl ? <img src={logoUrl} alt={brandName}/> : <>H&amp;S</>}</span>
+            <div><strong>Studio</strong><small>{brandName}</small></div>
           </Link>
           <button className="studio-close" type="button" onClick={() => setOpen(false)} aria-label="Fechar menu"><X size={21} /></button>
         </div>

@@ -1110,3 +1110,39 @@ html, body { width: 100%; max-width: 100%; overflow-x: clip; }
   .quick-actions-list { padding-inline: 10px; }
   .top-products-grid { grid-template-columns: 1fr; }
 }
+
+/* Personalização visual — uploads de marca e aplicação global da logo */
+.brand-assets-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.brand-assets-grid .brand-asset-field:last-child { grid-column: 1 / -1; }
+.brand-asset-field { min-width: 0; padding: 16px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border); border-radius: 16px; background: color-mix(in srgb, var(--brand) 2.5%, var(--surface)); }
+.brand-asset-copy strong { display: block; font-size: .9rem; }
+.brand-asset-copy p { margin: 3px 0 0; color: var(--muted); font-size: .78rem; font-weight: 500; }
+.brand-asset-copy small { display: block; margin-top: 5px; color: #96909a; font-size: .7rem; font-weight: 500; }
+.brand-asset-preview { position: relative; width: 100%; min-height: 170px; padding: 0; overflow: hidden; display: grid; place-items: center; border: 1.5px dashed color-mix(in srgb, var(--brand) 28%, var(--border)); border-radius: 16px; background: #fff; cursor: pointer; }
+.brand-asset-preview.square { aspect-ratio: 1 / 1; max-height: 240px; }
+.brand-asset-preview.wide { aspect-ratio: 1200 / 630; min-height: 180px; }
+.brand-asset-preview img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.brand-asset-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--brand); }
+.brand-asset-empty b { color: var(--text); font-size: .84rem; }
+.brand-asset-empty small { color: var(--muted); font-size: .7rem; }
+.brand-asset-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text); background: rgba(255,255,255,.88); font-size: .82rem; font-weight: 800; backdrop-filter: blur(4px); }
+.brand-asset-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.brand-asset-url { border-top: 1px solid var(--border); padding-top: 10px; }
+.brand-asset-url summary { width: fit-content; display: flex; align-items: center; gap: 6px; color: var(--muted); cursor: pointer; font-size: .75rem; font-weight: 700; }
+.brand-asset-url[open] summary { margin-bottom: 9px; }
+.brand-asset-status { color: var(--muted); font-size: .74rem; font-weight: 600; }
+.theme-preview-brand { display: flex; align-items: center; gap: 9px; }
+.theme-preview-brand img, .theme-preview-brand b { width: 34px; height: 34px; border-radius: 10px; object-fit: cover; }
+.theme-preview-brand b { display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--brand), var(--accent)); font-size: .7rem; }
+
+.studio-brand > span img, .login-logo > span img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.studio-brand > span:has(img), .login-logo > span:has(img) { padding: 0; overflow: hidden; background: #fff; }
+.footer-brand-logo { width: 44px; height: 44px; object-fit: cover; }
+
+@media (max-width: 760px) {
+  .brand-assets-grid { grid-template-columns: 1fr; }
+  .brand-assets-grid .brand-asset-field:last-child { grid-column: auto; }
+  .brand-asset-preview.square { max-height: 220px; }
+  .brand-asset-actions .button { flex: 1; }
+}
+.bootstrap-brand { justify-content: center; }

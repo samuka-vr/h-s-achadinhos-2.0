@@ -22,13 +22,13 @@ const roleLabels: Record<UserRole, string> = {
   analyst: "Analista",
 };
 
-export function StudioTopbar({ role }: { role: UserRole }) {
+export function StudioTopbar({ role, brandName }: { role: UserRole; brandName: string }) {
   const pathname = usePathname();
   const current = labels.find(({ prefix }) => pathname.startsWith(prefix))?.label ?? "Visão geral";
 
   return (
     <div className="studio-topbar">
-      <div className="studio-topbar-path"><span>H&amp;S Studio</span><strong>{current}</strong></div>
+      <div className="studio-topbar-path"><span>{brandName} · Studio</span><strong>{current}</strong></div>
       <div className="studio-topbar-actions">
         <span className="studio-security-chip"><ShieldCheck size={15} /> {roleLabels[role]}</span>
         <Link href="/studio/importacao" className="studio-topbar-link"><Import size={16} /> Importar produtos</Link>
