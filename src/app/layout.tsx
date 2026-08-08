@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "Descobertas que valem a pena.",
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#4f46e5" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#F2554F" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="pt-BR"><body><Toaster richColors position="top-right"/>{children}</body></html>;

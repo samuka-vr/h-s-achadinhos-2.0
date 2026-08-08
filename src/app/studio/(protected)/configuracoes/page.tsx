@@ -3,6 +3,7 @@ import { saveSettingsAction } from "@/server/actions/settings-actions";
 import { ColorField } from "@/components/studio/color-field";
 import { getStudioSettings } from "@/server/queries/studio";
 import { requireRole } from "@/server/auth";
+import { resolveSiteTheme } from "@/lib/theme";
 
 type Props = { searchParams: Promise<{ erro?: string; sucesso?: string }> };
 export const dynamic = "force-dynamic";
@@ -18,9 +19,13 @@ export default async function SettingsPage({ searchParams }: Props) {
   const heroSubtitle = stringSetting(settings.homepage.hero_subtitle, settings.description);
   const heroCta = stringSetting(settings.homepage.hero_cta, "Ver ofertas do dia");
   const footerNotice = stringSetting(settings.homepage.footer_notice, "Fazemos curadoria de produtos e podemos receber comissão por compras realizadas pelos nossos links, sem custo adicional para você.");
-  const primary = stringSetting(settings.theme.primary_color, "#4f46e5");
-  const primaryDark = stringSetting(settings.theme.primary_dark, "#3730a3");
-  const accent = stringSetting(settings.theme.accent_color, "#8b5cf6");
+  const theme = resolveSiteTheme(settings.theme);
+  const primary = theme.primary_color;
+  const primaryDark = theme.primary_dark;
+  const accent = theme.accent_color;
+  const background = theme.background_color;
+  const surface = theme.surface_color;
+  const text = theme.text_color;
 
   return (
     <>
@@ -60,9 +65,16 @@ export default async function SettingsPage({ searchParams }: Props) {
           <section className="panel form-section color-settings-card">
             <div className="form-section-heading"><span><Palette size={18}/></span><div><h2>Cores do site</h2><p>Use códigos hexadecimais.</p></div></div>
             <ColorField name="primary_color" label="Cor principal" defaultValue={primary}/>
-            <ColorField name="primary_dark" label="Cor principal escura" defaultValue={primaryDark}/>
+            <ColorField name="primary_dark" label="Tom mais escuro" defaultValue={primaryDark}/>
             <ColorField name="accent_color" label="Cor de destaque" defaultValue={accent}/>
-            <div className="theme-preview" style={{ background: `linear-gradient(135deg, ${primary}, ${accent})` }}><span>Prévia</span><strong>{settings.brand_name}</strong><button type="button">{heroCta}</button></div>
+            <ColorField name="background_color" label="Fundo do site" defaultValue={background}/>
+            <ColorField name="surface_color" label="Cartões e painéis" defaultValue={surface}/>
+            <ColorField name="text_color" label="Texto principal" defaultValue={text}/>
+            <div className="theme-preview" style={{ color: text, background }}>
+              <span style={{ color: primaryDark }}>Prévia da identidade</span>
+              <strong>{settings.brand_name}</strong>
+              <button type="button" style={{ color: "#fff", background: `linear-gradient(135deg, ${primary}, ${accent})` }}>{heroCta}</button>
+            </div>
           </section>
 
           <section className="panel form-section indexing-card">

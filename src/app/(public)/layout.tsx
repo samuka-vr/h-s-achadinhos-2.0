@@ -5,6 +5,7 @@ import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { AnalyticsTracker } from "@/components/site/analytics-tracker";
 import { getSiteSettings } from "@/server/queries/public";
+import { resolveSiteTheme } from "@/lib/theme";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
@@ -18,10 +19,14 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSiteSettings();
+  const theme = resolveSiteTheme(settings.theme);
   const style = {
-    "--brand": settings.theme.primary_color || "#4f46e5",
-    "--brand-strong": settings.theme.primary_dark || "#3730a3",
-    "--accent": settings.theme.accent_color || "#8b5cf6",
+    "--brand": theme.primary_color,
+    "--brand-strong": theme.primary_dark,
+    "--accent": theme.accent_color,
+    "--bg": theme.background_color,
+    "--surface": theme.surface_color,
+    "--text": theme.text_color,
   } as CSSProperties;
 
   return <div className="public-app" style={style}><Header settings={settings}/><main>{children}</main><Footer settings={settings}/><Suspense><AnalyticsTracker/></Suspense></div>;

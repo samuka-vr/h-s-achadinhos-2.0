@@ -1,21 +1,21 @@
 :root {
-  --bg: #f7f8fc;
+  --bg: #fff8f5;
   --surface: #ffffff;
-  --surface-soft: #f3f4f8;
-  --text: #151826;
-  --muted: #667085;
-  --border: #e5e7ef;
-  --brand: #4f46e5;
-  --brand-strong: #3730a3;
-  --accent: #8b5cf6;
-  --danger: #c0362c;
+  --surface-soft: #fff1ec;
+  --text: #2b2326;
+  --muted: #76696d;
+  --border: #f0d9d3;
+  --brand: #f2554f;
+  --brand-strong: #d92f46;
+  --accent: #ff7a3d;
+  --danger: #c92f3e;
   --success: #16865a;
-  --warning: #aa6a00;
+  --warning: #c56a12;
   --radius-sm: 12px;
   --radius: 18px;
   --radius-lg: 26px;
-  --shadow-sm: 0 8px 24px rgba(31, 38, 70, 0.06);
-  --shadow: 0 22px 60px rgba(31, 38, 70, 0.11);
+  --shadow-sm: 0 8px 24px rgba(126, 58, 48, 0.07);
+  --shadow: 0 22px 60px rgba(126, 58, 48, 0.13);
   --sidebar-width: 278px;
 }
 
@@ -1014,3 +1014,70 @@ textarea { resize: vertical; }
   .custom-upload-control .button, .quick-cover-upload-box .button { width: 100%; }
 }
 .bulk-product-toolbar.visible { overflow: visible; }
+
+
+/* H&S Achadinhos — identidade coral e correções de responsividade */
+html, body { width: 100%; max-width: 100%; overflow-x: clip; }
+.public-app, .studio-shell, .studio-main, .studio-content { width: 100%; max-width: 100%; min-width: 0; }
+.public-app { background: var(--bg); }
+::selection { color: #fff; background: var(--brand); }
+
+.surface-section { background: color-mix(in srgb, var(--brand) 5%, var(--surface)); border-color: color-mix(in srgb, var(--brand) 16%, #e6e7ef); }
+.site-header { border-bottom-color: color-mix(in srgb, var(--brand) 14%, #e2e5ee); }
+.header-search input { background: color-mix(in srgb, var(--brand) 5%, #fff); }
+.form-section-heading > span,
+.category-icon,
+.store-button,
+.quick-actions-list a > span,
+.top-products-grid article > span,
+.rank-badge,
+.preview-index,
+.manage-icon { background: color-mix(in srgb, var(--brand) 10%, #fff); }
+.catalog-hero, .search-page-hero, .page-hero { background: linear-gradient(180deg, color-mix(in srgb, var(--brand) 10%, #fff), var(--bg)); border-bottom-color: color-mix(in srgb, var(--brand) 18%, #fff); }
+.product-image-wrap { background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 5%, #fff), color-mix(in srgb, var(--accent) 8%, #fff)); }
+.image-placeholder { background: radial-gradient(circle at 40% 30%, #fff, color-mix(in srgb, var(--brand) 8%, #fff)); }
+
+.studio-shell { background: color-mix(in srgb, var(--brand) 3%, #f7f7f8); }
+.studio-sidebar { background: linear-gradient(180deg, var(--surface) 0%, color-mix(in srgb, var(--brand) 3%, var(--surface)) 100%); border-right-color: color-mix(in srgb, var(--brand) 14%, #e7e7ea); }
+.studio-brand > span { background: linear-gradient(135deg, var(--brand-strong), var(--accent)); box-shadow: 0 8px 20px color-mix(in srgb, var(--brand) 20%, transparent); }
+.studio-sidebar-status { background: color-mix(in srgb, var(--brand) 4%, var(--surface)); border-color: color-mix(in srgb, var(--brand) 13%, #e7e9f0); }
+.studio-sidebar nav a:hover { border-color: color-mix(in srgb, var(--brand) 14%, #e7e9f0); background: var(--surface); }
+.studio-sidebar nav a.active { border-color: color-mix(in srgb, var(--brand) 24%, #fff); background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 11%, #fff), color-mix(in srgb, var(--accent) 7%, #fff)); box-shadow: 0 6px 18px color-mix(in srgb, var(--brand) 9%, transparent); }
+.studio-sidebar nav a.active .studio-nav-copy small { color: color-mix(in srgb, var(--brand-strong) 62%, #8f93a2); }
+.studio-nav-icon { background: color-mix(in srgb, var(--brand) 5%, #f1f2f6); }
+.studio-topbar { border-bottom-color: color-mix(in srgb, var(--brand) 10%, #e1e4eb); }
+.studio-topbar-link:hover { border-color: color-mix(in srgb, var(--brand) 30%, #e0e3ea); }
+.studio-stat-card.indigo .stat-icon { color: var(--brand); background: color-mix(in srgb, var(--brand) 10%, #fff); }
+.studio-stat-card.violet .stat-icon { color: var(--brand-strong); background: color-mix(in srgb, var(--brand-strong) 9%, #fff); }
+.studio-stat-card.amber .stat-icon { color: #d66a1f; background: color-mix(in srgb, var(--accent) 12%, #fff); }
+.bulk-product-toolbar, .studio-bulk-bar { background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 10%, #fff), color-mix(in srgb, var(--accent) 6%, #fff)); border-bottom-color: color-mix(in srgb, var(--brand) 20%, #fff); }
+.managed-card.selected, .professional-users-list .user-card-row.selected, .professional-product-table tbody tr.selected-row, .mobile-product-card.selected { background: color-mix(in srgb, var(--brand) 5%, #fff); }
+.admin-list-toolbar, .custom-upload-picker, .quick-cover-upload-box { background: color-mix(in srgb, var(--brand) 3%, #fff); }
+.admin-list-count { color: color-mix(in srgb, var(--text) 74%, #fff); background: color-mix(in srgb, var(--brand) 7%, #f0f1f5); }
+.theme-preview { border: 1px solid color-mix(in srgb, var(--brand) 18%, var(--border)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.45); }
+.theme-preview button { border: 0; }
+
+@media (max-width: 980px) {
+  .studio-shell { display: block; width: 100%; max-width: 100%; }
+  .studio-mobile-header { width: 100%; max-width: 100%; }
+  .studio-main { width: 100%; max-width: 100%; margin: 0; }
+  .studio-content { width: 100%; max-width: none; margin: 0; }
+  .studio-sidebar {
+    width: min(340px, calc(100vw - 42px));
+    max-width: calc(100vw - 42px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+  .studio-overlay { width: 100vw; height: 100dvh; }
+  body:has(.studio-sidebar.open) { overflow: hidden; }
+}
+
+@media (max-width: 560px) {
+  .studio-mobile-header { padding-inline: 14px; }
+  .studio-main { padding: 18px 12px 32px; }
+  .studio-content { overflow: visible; }
+  .studio-page-header { width: 100%; }
+  .header-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .header-actions .button { min-width: 0; padding-inline: 10px; font-size: .78rem; }
+}

@@ -23,6 +23,9 @@ export async function saveSettingsAction(formData: FormData) {
     primary_color: formData.get("primary_color"),
     primary_dark: formData.get("primary_dark"),
     accent_color: formData.get("accent_color"),
+    background_color: formData.get("background_color"),
+    surface_color: formData.get("surface_color"),
+    text_color: formData.get("text_color"),
     show_categories: formData.get("show_categories") === "on",
     show_featured: formData.get("show_featured") === "on",
     show_latest: formData.get("show_latest") === "on",
@@ -41,6 +44,9 @@ export async function saveSettingsAction(formData: FormData) {
     primary_color,
     primary_dark,
     accent_color,
+    background_color,
+    surface_color,
+    text_color,
     show_categories,
     show_featured,
     show_latest,
@@ -52,7 +58,7 @@ export async function saveSettingsAction(formData: FormData) {
     ...rest,
     social_links: { instagram, tiktok, whatsapp },
     homepage: { hero_title, hero_subtitle, hero_cta, footer_notice, show_categories, show_featured, show_latest },
-    theme: { primary_color, primary_dark, accent_color },
+    theme: { primary_color, primary_dark, accent_color, background_color, surface_color, text_color },
   }).eq("id", 1);
 
   if (error) redirect(`/studio/configuracoes?erro=${encodeURIComponent(error.message)}`);
