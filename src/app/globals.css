@@ -328,20 +328,20 @@ textarea { resize: vertical; }
 .studio-stat-card small { color: var(--muted); font-weight: 650; }
 .studio-stat-card strong { margin-top: 4px; font-size: 1.7rem; line-height: 1.1; }
 .studio-stat-card em { margin-top: 5px; color: #8a8fa0; font-size: .72rem; font-style: normal; }
-.dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .75fr); gap: 18px; }
-.dashboard-side-stack { display: flex; flex-direction: column; gap: 18px; }
-.dashboard-product-list { padding: 5px 18px 14px; }
-.dashboard-product-row { padding: 12px 4px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #eff0f4; }
+.dashboard-grid { min-width: 0; max-width: 100%; display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .75fr); gap: 18px; }
+.dashboard-side-stack { min-width: 0; max-width: 100%; display: flex; flex-direction: column; gap: 18px; }
+.dashboard-product-list { min-width: 0; max-width: 100%; padding: 5px 18px 14px; overflow: hidden; }
+.dashboard-product-row { width: 100%; min-width: 0; max-width: 100%; padding: 12px 4px; overflow: hidden; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #eff0f4; }
 .dashboard-product-row:last-child { border-bottom: 0; }
 .dashboard-product-row > svg { color: #a0a4b1; }
 .mini-product-image, .table-product-image { overflow: hidden; display: grid; place-items: center; flex: 0 0 auto; border-radius: 10px; background: #f0f1f6; color: var(--brand); font-size: .65rem; font-weight: 900; }
 .mini-product-image { width: 44px; height: 44px; }
 .mini-product-image img, .table-product-image img { width: 100%; height: 100%; object-fit: cover; }
-.dashboard-product-row .grow { display: flex; flex-direction: column; }
+.dashboard-product-row .grow { min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
 .dashboard-product-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .84rem; }
 .dashboard-product-row .grow span { color: var(--muted); font-size: .72rem; }
 .quick-actions-list { padding: 8px 14px 14px; }
-.quick-actions-list a { padding: 10px 5px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eff0f4; }
+.quick-actions-list a { width: 100%; min-width: 0; padding: 10px 5px; overflow: hidden; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eff0f4; }
 .quick-actions-list a:last-child { border-bottom: 0; }
 .quick-actions-list a > span { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; color: var(--brand); background: #eef0ff; }
 .quick-actions-list a > div { flex: 1; display: flex; flex-direction: column; }
@@ -352,7 +352,7 @@ textarea { resize: vertical; }
 .health-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; color: #b16b00; background: #fff6df; }
 .health-card h2 { margin: 7px 0 6px; font-size: 1.08rem; }
 .health-card p { margin: 0 0 16px; color: var(--muted); font-size: .82rem; }
-.section-panel { margin-top: 18px; }
+.section-panel { width: 100%; min-width: 0; max-width: 100%; margin-top: 18px; overflow: hidden; }
 .top-products-grid { padding: 5px 18px 18px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .top-products-grid article { min-width: 0; padding: 13px; border: 1px solid var(--border); border-radius: 13px; background: #fafbfe; }
 .top-products-grid article > span { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; color: var(--brand); background: #eef0ff; font-size: .72rem; font-weight: 850; }
@@ -1060,8 +1060,13 @@ html, body { width: 100%; max-width: 100%; overflow-x: clip; }
 @media (max-width: 980px) {
   .studio-shell { display: block; width: 100%; max-width: 100%; }
   .studio-mobile-header { width: 100%; max-width: 100%; }
-  .studio-main { width: 100%; max-width: 100%; margin: 0; }
-  .studio-content { width: 100%; max-width: none; margin: 0; }
+  .studio-main { width: 100%; max-width: 100%; margin: 0; overflow-x: hidden; }
+  .studio-content { width: 100%; max-width: none; min-width: 0; margin: 0; }
+  .dashboard-grid { width: 100%; min-width: 0; max-width: 100%; grid-template-columns: minmax(0, 1fr); }
+  .dashboard-side-stack { width: 100%; min-width: 0; max-width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); }
+  .dashboard-products-panel, .quick-actions-card, .health-card, .section-panel { width: 100%; min-width: 0; max-width: 100%; }
+  .dashboard-products-panel, .quick-actions-card, .section-panel { overflow: hidden; }
+  .dashboard-product-row, .quick-actions-list a { max-width: 100%; }
   .studio-sidebar {
     width: min(340px, calc(100vw - 42px));
     max-width: calc(100vw - 42px);
@@ -1073,6 +1078,24 @@ html, body { width: 100%; max-width: 100%; overflow-x: clip; }
   body:has(.studio-sidebar.open) { overflow: hidden; }
 }
 
+@media (max-width: 760px) {
+  .dashboard-products-panel .panel-heading.compact,
+  .quick-actions-card .panel-heading.compact,
+  .section-panel .panel-heading.compact {
+    width: 100%;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: 9px;
+    text-align: left;
+  }
+  .dashboard-products-panel .panel-heading .text-link,
+  .quick-actions-card .panel-heading .text-link,
+  .section-panel .panel-heading .text-link { align-self: flex-start; }
+  .dashboard-product-row strong { width: 100%; max-width: 100%; }
+}
+
 @media (max-width: 560px) {
   .studio-mobile-header { padding-inline: 14px; }
   .studio-main { padding: 18px 12px 32px; }
@@ -1080,4 +1103,10 @@ html, body { width: 100%; max-width: 100%; overflow-x: clip; }
   .studio-page-header { width: 100%; }
   .header-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .header-actions .button { min-width: 0; padding-inline: 10px; font-size: .78rem; }
+  .dashboard-product-list { padding-inline: 12px; }
+  .dashboard-product-row { gap: 9px; }
+  .dashboard-product-row > .status-pill,
+  .dashboard-product-row > svg { display: none; }
+  .quick-actions-list { padding-inline: 10px; }
+  .top-products-grid { grid-template-columns: 1fr; }
 }
